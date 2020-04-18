@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "528913146776",
+    "firebase_url": "https://flutter-tweets-spring-2020.firebaseio.com",
+    "project_id": "flutter-tweets-spring-2020",
+    "storage_bucket": "flutter-tweets-spring-2020.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528913146776:android:cfd6c258f846ecb75941ed",
+        "android_client_info": {
+          "package_name": "com.example.flutter.fluttertweets"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "528913146776-t8vt6lvbktvi7aiu8b9v9cl439sqho0t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-P4rBYcWC5cT3Y0J1jJ2nPfDgQOhOYqI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "528913146776-t8vt6lvbktvi7aiu8b9v9cl439sqho0t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,17 +1,28 @@
 import 'dart:math';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:flutter/material.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends StatelessWidget {
   final String title;
 
   LoginScreen({Key key, this.title}) : super(key: key);
 
   @override
-  State<StatefulWidget> createState() => _LoginScreenState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(title: Text('Flutter Tweets')),
+        body: LoginForm()
+    );
+  }
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class LoginForm extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() => _LoginFormState();
+}
+
+class _LoginFormState extends State<LoginForm> {
 
   var buttonsEnabled = false;
 
@@ -20,6 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final emailTextController = TextEditingController();
 
   final passwordTextController = TextEditingController();
+
+  final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -41,6 +54,23 @@ class _LoginScreenState extends State<LoginScreen> {
       buttonsEnabled = enabled;
     });
   }
+
+  Future<FirebaseUser> _handleSignUp() async {
+    final inputtedEmail = emailTextController.text.trim();
+    final inputtedPassword = emailTextController.text.trim();
+    print("Registering as $inputtedEmail / $inputtedPassword");
+    final registerTask = firebaseAuth.createUserWithEmailAndPassword(email: inputtedEmail, password: inputtedPassword);
+    return (await registerTask).user;
+  }
+
+  Future<FirebaseUser> _handleSignIn() async {
+    final inputtedEmail = emailTextController.text.trim();
+    final inputtedPassword = emailTextController.text.trim();
+    print("Registering as $inputtedEmail / $inputtedPassword");
+    final registerTask = firebaseAuth.signInWithEmailAndPassword(email: inputtedEmail, password: inputtedPassword);
+    return (await registerTask).user;
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +107,23 @@ class _LoginScreenState extends State<LoginScreen> {
               setState(() {
                 loadingShown = true;
               });
+              _handleSignIn()
+                  .then((user) {
+                    Scaffold.of(context).showSnackBar(SnackBar(
+                      content: Text("Signed in as ${user.email}!"),
+                    ));
+                    setState(() {
+                      loadingShown = false;
+                    });
+                  })
+                  .catchError((e) {
+                    Scaffold.of(context).showSnackBar(SnackBar(
+                      content: Text("Failed to sign in: $e"),
+                    ));
+                    setState(() {
+                      loadingShown = false;
+                    });
+                  });
             } : null,
             child: SizedBox(
                 width: double.infinity,
@@ -90,7 +137,19 @@ class _LoginScreenState extends State<LoginScreen> {
     final signUp = Container(
         margin: EdgeInsets.symmetric(horizontal: 24.0),
         child: RaisedButton(
-            onPressed: buttonsEnabled ? () {} : null,
+            onPressed: buttonsEnabled ? () {
+              _handleSignUp()
+                  .then((user) {
+                    Scaffold.of(context).showSnackBar(SnackBar(
+                      content: Text("Registered as ${user.email}"),
+                    ));
+                  })
+                  .catchError((e) {
+                    Scaffold.of(context).showSnackBar(SnackBar(
+                      content: Text("Failed to register: $e"),
+                    ));
+                  });
+            } : null,
             child: SizedBox(
                 width: double.infinity,
                 child: Center(
@@ -108,21 +167,18 @@ class _LoginScreenState extends State<LoginScreen> {
        )
     );
 
-    return Scaffold(
-        appBar: AppBar(title: Text('Flutter Tweets')),
-        body: Center(
-            child: Container(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    title,
-                    email,
-                    password,
-                    login,
-                    signUp,
-                    progressBar
-                  ],
-                )
+    return Center(
+        child: Container(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              children: [
+                title,
+                email,
+                password,
+                login,
+                signUp,
+                progressBar
+              ],
             )
         )
     );
