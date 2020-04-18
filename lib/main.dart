@@ -8,7 +8,7 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Tweets',
-      home: LoginScreen(title: 'Firebase Login'),
+      home: LoginScreen(),
     );
   }
 }

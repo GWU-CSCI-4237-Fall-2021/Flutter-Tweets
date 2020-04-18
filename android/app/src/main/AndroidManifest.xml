@@ -9,6 +9,10 @@
         android:name="io.flutter.app.FlutterApplication"
         android:label="fluttertweets"
         android:icon="@mipmap/ic_launcher">
+
+        <meta-data android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyD6D1ea9d0hpYai3Cei9jJl35Wc66js8_Q"/>
+
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"

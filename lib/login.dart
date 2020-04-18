@@ -1,13 +1,9 @@
-import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:flutter/material.dart';
+import 'package:fluttertweets/maps.dart';
 
 class LoginScreen extends StatelessWidget {
-  final String title;
-
-  LoginScreen({Key key, this.title}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -115,6 +111,7 @@ class _LoginFormState extends State<LoginForm> {
                     setState(() {
                       loadingShown = false;
                     });
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => MapsScreen()));
                   })
                   .catchError((e) {
                     Scaffold.of(context).showSnackBar(SnackBar(
