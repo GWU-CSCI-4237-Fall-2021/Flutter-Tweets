@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fluttertweets/tweets.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -40,7 +41,9 @@ class MapsScreenState extends State<MapsScreen> {
                   scaffoldState.currentState.showSnackBar(SnackBar(
                     content: Text("Long-tap to choose a location!"),
                   ));
-                } else {}
+                } else {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => TweetsScreen(currentAddress)));
+                }
               },
               child: currentAddress != null
                   ? Icon(Icons.check)
