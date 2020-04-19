@@ -1,23 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertweets/tweets.dart';
 import 'package:geocoder/geocoder.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:flutter/material.dart';
 
-class MapsScreen extends StatefulWidget {
-  @override
-  State<StatefulWidget> createState() {
-    return MapsScreenState();
-  }
-}
-
-class MapsScreenState extends State<MapsScreen> {
-  Address currentAddress;
-
-  // https://stackoverflow.com/a/50452277
-  GlobalKey<ScaffoldState> scaffoldState = GlobalKey();
-
+class MapsScreen extends StatelessWidget {
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
 
   @override
@@ -30,57 +19,28 @@ class MapsScreenState extends State<MapsScreen> {
               : "Welcome!";
 
           return Scaffold(
-            key: scaffoldState,
             appBar: AppBar(
               title: Text(title),
             ),
-            body: MapView(locationChosen),
-            floatingActionButton: FloatingActionButton(
-              onPressed: () {
-                if (currentAddress == null) {
-                  scaffoldState.currentState.showSnackBar(SnackBar(
-                    content: Text("Long-tap to choose a location!"),
-                  ));
-                } else {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => TweetsScreen(currentAddress)));
-                }
-              },
-              child: currentAddress != null
-                  ? Icon(Icons.check)
-                  : Icon(Icons.clear),
-              backgroundColor:
-                  currentAddress != null ? Colors.green : Colors.red,
-            ),
+            body: MapView(),
           );
         });
-  }
-
-  void locationChosen(Address address) {
-    setState(() {
-      currentAddress = address;
-    });
   }
 }
 
 class MapView extends StatefulWidget {
-  MapView(this.locationChosen);
-
-  final Function(Address) locationChosen;
-
   @override
   State<StatefulWidget> createState() {
-    return MapViewState(locationChosen);
+    return MapViewState();
   }
 }
 
 class MapViewState extends State<MapView> {
   GoogleMapController mapController;
 
-  MapViewState(this.locationChosen);
-
-  final Function(Address) locationChosen;
-
   final markers = Set<Marker>();
+
+  Address currentAddress;
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
@@ -100,38 +60,118 @@ class MapViewState extends State<MapView> {
       zoomControlsEnabled: false,
       markers: markers,
       onLongPress: (latLng) {
-        final coordinates = Coordinates(latLng.latitude, latLng.longitude);
-        Geocoder.local
-            .findAddressesFromCoordinates(coordinates)
-            .then((List<Address> results) {
-          if (results.isNotEmpty) {
-            final first = results.first;
-            setState(() {
-              markers.clear();
-              final markerId = MarkerId("Marker");
-              markers.add(Marker(
-                markerId: markerId,
-                position: latLng,
-                infoWindow: InfoWindow(title: first.addressLine),
-                icon: BitmapDescriptor.defaultMarker,
-              ));
-            });
-            mapController
-                .animateCamera(CameraUpdate.newLatLngZoom(latLng, 14.0));
-            locationChosen(first);
-          } else {
-            Scaffold.of(context).showSnackBar(SnackBar(
-              content: Text("No results found for location!"),
-            ));
-          }
-        }).catchError((error) {
-          Scaffold.of(context).showSnackBar(SnackBar(
-            content: Text("Failed to geocode: $error"),
-          ));
-        });
+        handleGeocoding(context, latLng);
       },
     );
 
-    return map;
+    final currentLocation = Material(
+        elevation: 2.0,
+        color: Colors.white,
+        child: IconButton(
+          onPressed: () {
+            handleCurrentLocation(context);
+          },
+          icon: Icon(Icons.my_location),
+        ));
+
+    final confirmText = currentAddress != null
+        ? currentAddress.addressLine
+        : "Long-tap to choose a location!";
+    final confirmColor = currentAddress != null ? Colors.green : Colors.red;
+    final confirmIcon = currentAddress != null ? Icons.check : Icons.clear;
+    final VoidCallback confirmOnClick = currentAddress != null
+        ? () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => TweetsScreen(currentAddress)));
+          }
+        : () {};
+
+    // https://stackoverflow.com/a/59483324
+    // Using RaisedButton.icon would work too and is much simpler, but doesn't give
+    // me the spacing I want between the Icon and the Text, so doing a "custom" solution manually
+    // using a Row + weighted spacing using Expanded
+    final confirm = RaisedButton(
+        onPressed: confirmOnClick,
+        color: confirmColor,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Expanded(
+              flex: 1,
+              child: Icon(confirmIcon, color: Colors.white),
+            ),
+            Expanded(
+                flex: 4,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: Text(
+                    confirmText,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ))
+          ],
+        ));
+
+    return Stack(
+      children: <Widget>[
+        map,
+        Align(
+            alignment: Alignment.topLeft,
+            child: Container(
+                margin: EdgeInsets.fromLTRB(16.0, 16.0, 0.0, 0.0),
+                child: currentLocation)),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+              margin: EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 16.0),
+              child: SizedBox(width: double.infinity, child: confirm)),
+        )
+      ],
+    );
+  }
+
+  void handleGeocoding(BuildContext context, LatLng latLng) {
+    final coordinates = Coordinates(latLng.latitude, latLng.longitude);
+    Geocoder.local
+        .findAddressesFromCoordinates(coordinates)
+        .then((List<Address> results) {
+      if (results.isNotEmpty) {
+        final first = results.first;
+        setState(() {
+          currentAddress = first;
+          markers.clear();
+          final markerId = MarkerId("Marker");
+          markers.add(Marker(
+            markerId: markerId,
+            position: latLng,
+            infoWindow: InfoWindow(title: first.addressLine),
+            icon: BitmapDescriptor.defaultMarker,
+          ));
+        });
+        mapController.animateCamera(CameraUpdate.newLatLngZoom(latLng, 14.0));
+      } else {
+        Scaffold.of(context).showSnackBar(SnackBar(
+          content: Text("No results found for location!"),
+        ));
+      }
+    }).catchError((error) {
+      Scaffold.of(context).showSnackBar(SnackBar(
+        content: Text("Failed to geocode: $error"),
+      ));
+    });
+  }
+
+  void handleCurrentLocation(BuildContext context) {
+    Geolocator()
+        .getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
+        .then((Position position) {
+      handleGeocoding(context, LatLng(position.latitude, position.longitude));
+    }).catchError((error) {
+      print("Did not retrieve current location: $error");
+    });
   }
 }
