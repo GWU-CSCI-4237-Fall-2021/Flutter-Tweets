@@ -55,6 +55,9 @@ class MapViewState extends State<MapView> {
   /// The currently chosen (and geocoded) location on the map.
   Address currentAddress;
 
+  /// Controls whether our progress indicator is shown.
+  var loadingShown = false;
+
   /// Once the map has loaded, keep a reference to the controller.
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
@@ -85,9 +88,9 @@ class MapViewState extends State<MapView> {
         elevation: 2.0,
         color: Colors.white,
         child: IconButton(
-          onPressed: () {
+          onPressed: !loadingShown ? () {
             _handleCurrentLocation(context);
-          },
+          } : null,
           icon: Icon(Icons.my_location),
         ));
 
@@ -96,7 +99,7 @@ class MapViewState extends State<MapView> {
         ? currentAddress.addressLine
         : "Long-tap to choose a location!";
     final confirmIcon = currentAddress != null ? Icons.check : Icons.clear;
-    final VoidCallback confirmOnClick = currentAddress != null
+    final VoidCallback confirmOnClick = currentAddress != null && !loadingShown
         ? () {
             // If enabled, clicking goes to the Tweets screen and passes it the
             // current address as a parameter.
@@ -138,6 +141,11 @@ class MapViewState extends State<MapView> {
           ],
         ));
 
+    final progressBar = Visibility(
+      visible: loadingShown,
+      child: CircularProgressIndicator(),
+    );
+
     // Stack is used to put widgets (two buttons) "on top" of the map
     return Stack(
       children: <Widget>[
@@ -152,6 +160,10 @@ class MapViewState extends State<MapView> {
           child: Container(
               margin: EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 16.0),
               child: SizedBox(width: double.infinity, child: confirm)),
+        ),
+        Align(
+          alignment: Alignment.center,
+          child: progressBar
         )
       ],
     );
@@ -159,6 +171,10 @@ class MapViewState extends State<MapView> {
 
   /// Reverse geocodes the [latlng] into an [Address] which will be displayed on the UI.
   void _handleGeocoding(BuildContext context, LatLng latLng) {
+    setState(() {
+      loadingShown = true;
+    });
+
     final coordinates = Coordinates(latLng.latitude, latLng.longitude);
     Geocoder.local
         .findAddressesFromCoordinates(coordinates)
@@ -168,6 +184,7 @@ class MapViewState extends State<MapView> {
 
         // Refresh the new UI with a new marker and address
         setState(() {
+          loadingShown = false;
           currentAddress = first;
           markers.clear();
           final markerId = MarkerId("Marker");
@@ -183,22 +200,35 @@ class MapViewState extends State<MapView> {
         Scaffold.of(context).showSnackBar(SnackBar(
           content: Text("No results found for location!"),
         ));
+        setState(() {
+          loadingShown = false;
+        });
       }
     }).catchError((error) {
       Scaffold.of(context).showSnackBar(SnackBar(
         content: Text("Failed to geocode: $error"),
       ));
+      setState(() {
+        loadingShown = false;
+      });
     });
   }
 
   /// Handles the location permission prompt and getting the last location.
   void _handleCurrentLocation(BuildContext context) {
+    setState(() {
+      loadingShown = true;
+    });
+
     Geolocator()
         .getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
         .then((Position position) {
       _handleGeocoding(context, LatLng(position.latitude, position.longitude));
     }).catchError((error) {
       print("Did not retrieve current location: $error");
+      setState(() {
+        loadingShown = false;
+      });
     });
   }
 }
