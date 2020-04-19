@@ -6,14 +6,22 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:flutter/material.dart';
 
+/// Our MapsScreen is comprised of two major pieces:
+///   - The title bar
+///   - The actual map with buttons
 class MapsScreen extends StatelessWidget {
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
 
+  /// Creates the UI.
   @override
   Widget build(BuildContext context) {
+    // Unlike in Android, in Flutter getting the currentUser is also an async action
+    // So our UI has to have an "initial" state and then an "updated" state after the
+    // current user is retrieved.
     return FutureBuilder(
         future: firebaseAuth.currentUser(),
         builder: (BuildContext context, AsyncSnapshot<FirebaseUser> asyncUser) {
+          // Different titles for the placeholder vs. when we have the current user
           final title = asyncUser.connectionState == ConnectionState.done
               ? "Welcome, ${asyncUser.data.email}!"
               : "Welcome!";
@@ -28,6 +36,7 @@ class MapsScreen extends StatelessWidget {
   }
 }
 
+/// The MapView part of the screen needs to keep track of state and update accordingly.
 class MapView extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
@@ -35,23 +44,30 @@ class MapView extends StatefulWidget {
   }
 }
 
+/// Displays the Map and functionality related to it -- marker display, geocoding, buttons.
 class MapViewState extends State<MapView> {
+  /// Allows us to manipulate the map (show markers, zoom, etc.).
   GoogleMapController mapController;
 
+  /// Markers currently displayed on the map.
   final markers = Set<Marker>();
 
+  /// The currently chosen (and geocoded) location on the map.
   Address currentAddress;
 
+  /// Once the map has loaded, keep a reference to the controller.
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
   }
 
+  /// Creates the UI, based on the current state.
   @override
   Widget build(BuildContext context) {
     final map = GoogleMap(
       onMapCreated: _onMapCreated,
       initialCameraPosition: CameraPosition(
         target: LatLng(38.899937, -77.0444101),
+        // Initial zoom to Washington D.C.
         zoom: 11.0,
       ),
       myLocationButtonEnabled: false,
@@ -59,8 +75,9 @@ class MapViewState extends State<MapView> {
       mapToolbarEnabled: false,
       zoomControlsEnabled: false,
       markers: markers,
+      // When the map is re-rendered, it displays the updated markers
       onLongPress: (latLng) {
-        handleGeocoding(context, latLng);
+        _handleGeocoding(context, latLng);
       },
     );
 
@@ -69,24 +86,26 @@ class MapViewState extends State<MapView> {
         color: Colors.white,
         child: IconButton(
           onPressed: () {
-            handleCurrentLocation(context);
+            _handleCurrentLocation(context);
           },
           icon: Icon(Icons.my_location),
         ));
 
+    // Update our confirmation button based on whether a location has been chosen
     final confirmText = currentAddress != null
         ? currentAddress.addressLine
         : "Long-tap to choose a location!";
-    final confirmColor = currentAddress != null ? Colors.green : Colors.red;
     final confirmIcon = currentAddress != null ? Icons.check : Icons.clear;
     final VoidCallback confirmOnClick = currentAddress != null
         ? () {
+            // If enabled, clicking goes to the Tweets screen and passes it the
+            // current address as a parameter.
             Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (context) => TweetsScreen(currentAddress)));
           }
-        : () {};
+        : null;
 
     // https://stackoverflow.com/a/59483324
     // Using RaisedButton.icon would work too and is much simpler, but doesn't give
@@ -94,11 +113,14 @@ class MapViewState extends State<MapView> {
     // using a Row + weighted spacing using Expanded
     final confirm = RaisedButton(
         onPressed: confirmOnClick,
-        color: confirmColor,
+        color: Colors.green,
+        disabledColor: Colors.red,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            // Using different weights ("flex") to manipulate how much visible space
+            // is allocated to each element
             Expanded(
               flex: 1,
               child: Icon(confirmIcon, color: Colors.white),
@@ -116,6 +138,7 @@ class MapViewState extends State<MapView> {
           ],
         ));
 
+    // Stack is used to put widgets (two buttons) "on top" of the map
     return Stack(
       children: <Widget>[
         map,
@@ -134,13 +157,16 @@ class MapViewState extends State<MapView> {
     );
   }
 
-  void handleGeocoding(BuildContext context, LatLng latLng) {
+  /// Reverse geocodes the [latlng] into an [Address] which will be displayed on the UI.
+  void _handleGeocoding(BuildContext context, LatLng latLng) {
     final coordinates = Coordinates(latLng.latitude, latLng.longitude);
     Geocoder.local
         .findAddressesFromCoordinates(coordinates)
         .then((List<Address> results) {
       if (results.isNotEmpty) {
         final first = results.first;
+
+        // Refresh the new UI with a new marker and address
         setState(() {
           currentAddress = first;
           markers.clear();
@@ -165,11 +191,12 @@ class MapViewState extends State<MapView> {
     });
   }
 
-  void handleCurrentLocation(BuildContext context) {
+  /// Handles the location permission prompt and getting the last location.
+  void _handleCurrentLocation(BuildContext context) {
     Geolocator()
         .getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
         .then((Position position) {
-      handleGeocoding(context, LatLng(position.latitude, position.longitude));
+      _handleGeocoding(context, LatLng(position.latitude, position.longitude));
     }).catchError((error) {
       print("Did not retrieve current location: $error");
     });

@@ -5,6 +5,7 @@ import 'package:geocoder/geocoder.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart' show rootBundle;
 
+/// Data class representing a Tweet.
 class Tweet {
   Tweet({this.name, this.handle, this.content, this.iconUrl});
 
@@ -14,6 +15,7 @@ class Tweet {
   final String iconUrl;
 }
 
+/// Data class to hold Twitter API keys.
 class TwitterSecrets {
   TwitterSecrets({this.key, this.secret});
 
@@ -21,6 +23,9 @@ class TwitterSecrets {
   final String secret;
 }
 
+/// Our MapsScreen is comprised of two major pieces:
+///   - The title bar
+///   - The actual list of [Tweet]s.
 class TweetsScreen extends StatelessWidget {
   TweetsScreen(this.address);
 
@@ -37,6 +42,8 @@ class TweetsScreen extends StatelessWidget {
   }
 }
 
+/// The TweetsList part of the screen handles making the Twitter API call (using
+/// the current [address] and rendering the scrollable list of [Tweet]s.
 class TweetsList extends StatefulWidget {
   TweetsList(this.address);
 
@@ -48,51 +55,70 @@ class TweetsList extends StatefulWidget {
   }
 }
 
+/// Handles making the Twitter API call (using the current [address] and
+/// rendering the scrollable list of [Tweet]s (or an error text).
 class TweetsListState extends State<TweetsList> {
   TweetsListState(this.address);
 
+  /// Location the user selected on the [MapsScreen].
   final Address address;
 
+  /// Retrieved list of [Tweet]s.
   List<Tweet> tweets;
 
+  /// API error, if one occurred.
   String error;
 
+  /// Kick off the API call when initialized for the 1st time.
   @override
   void initState() {
     super.initState();
-    retrieveTweets(address).then((tweets) {
+    _retrieveTweets(address).then((tweets) {
+      // Refresh the UI with retrieved Tweets
       setState(() {
         this.tweets = tweets;
       });
     }).catchError((error) {
+      // Refresh the UI with an error
       setState(() {
         this.error = error.toString();
       });
     });
   }
 
-  Future<TwitterSecrets> retrieveTwitterSecrets() async {
+  /// Reads Twitter API keys from "assets/secrets.json" which would normally
+  /// be in the .gitignore to avoid being checked into GitHub.
+  Future<TwitterSecrets> _retrieveTwitterSecrets() async {
     String secrets = await rootBundle.loadString('assets/secrets.json');
+
+    // JSON parsing can be done manually using a Map of String --> Anything (dynamic)
     Map<String, dynamic> secretsJson = jsonDecode(secrets);
     return TwitterSecrets(
         key: secretsJson['twitter_key'], secret: secretsJson['twitter_secret']);
   }
 
-  Future<String> retrieveOAuthToken() async {
-    TwitterSecrets secrets = await retrieveTwitterSecrets();
+  /// Retrieve an application-only OAuth token from the Twitter API.
+  Future<String> _retrieveOAuthToken() async {
+    // Required encoded key + secrets, per Twitter's OAuth docs
+    TwitterSecrets secrets = await _retrieveTwitterSecrets();
     String encodedKey = Uri.encodeFull(secrets.key);
     String encodedSecret = Uri.encodeFull(secrets.secret);
     String combinedEncoded = "$encodedKey:$encodedSecret";
     String combinedBase64 = base64.encode(utf8.encode(combinedEncoded));
 
+    // Execute API call
     http.Response oAuthResponse = await http.post(
         "https://api.twitter.com/oauth2/token",
         headers: {"Authorization": "Basic $combinedBase64"},
         body: {"grant_type": "client_credentials"});
 
-    if (responseIsSuccessful(oAuthResponse) && oAuthResponse.body.isNotEmpty) {
+    if (_responseIsSuccessful(oAuthResponse) && oAuthResponse.body.isNotEmpty) {
       print(oAuthResponse.body);
+
+      // JSON parsing can be done manually using a Map of String --> Anything (dynamic)
       Map<String, dynamic> oauthBodyJson = jsonDecode(oAuthResponse.body);
+
+      // The OAuth token
       return oauthBodyJson["access_token"];
     } else {
       return Future.error(
@@ -100,9 +126,11 @@ class TweetsListState extends State<TweetsList> {
     }
   }
 
-  Future<List<Tweet>> retrieveTweets(Address address) async {
-    String token = await retrieveOAuthToken();
+  /// Retrieve Tweets containing the word "flutter" around the current [address].
+  Future<List<Tweet>> _retrieveTweets(Address address) async {
+    String token = await _retrieveOAuthToken();
 
+    // Request parameters
     String searchTerm = "flutter";
     double latitude = address.coordinates.latitude;
     double longitude = address.coordinates.longitude;
@@ -113,22 +141,31 @@ class TweetsListState extends State<TweetsList> {
         "https://api.twitter.com/1.1/search/tweets.json?q=$searchTerm&geocode=$latitude,$longitude,$radius",
         headers: {"Authorization": "Bearer $token"});
 
-    if (responseIsSuccessful(searchTweetsResponse) &&
-        searchTweetsResponse.body.isNotEmpty) {
+    if (_responseIsSuccessful(searchTweetsResponse) && searchTweetsResponse.body.isNotEmpty) {
       print(searchTweetsResponse.body);
+
+      // JSON parsing can be done manually using a Map of String --> Anything (dynamic)
       Map<String, dynamic> tweetsBodyJson =
           jsonDecode(searchTweetsResponse.body);
+
+      // List<JSONObject> containing the Tweets
       List<dynamic> statuses = tweetsBodyJson["statuses"] as List;
+
+      // Loop over each Tweet and pick out the relevant fields
       statuses.forEach((dynamic curr) {
+        // Get the current Tweet JSON
         Map<String, dynamic> currJson = curr as Map<String, dynamic>;
+
+        // Tweet content
         String content = currJson["text"];
 
+        // User-specific fields - name, handle, profile image URL
         Map<String, dynamic> userJson = currJson["user"];
         String name = userJson["name"];
         String handle = userJson["screen_name"];
         String iconUrl = userJson["profile_image_url_https"];
-        tweets.add(Tweet(
-            name: name, handle: handle, iconUrl: iconUrl, content: content));
+
+        tweets.add(Tweet(name: name, handle: handle, iconUrl: iconUrl, content: content));
       });
     } else {
       return Future.error(
@@ -137,10 +174,12 @@ class TweetsListState extends State<TweetsList> {
     return tweets;
   }
 
-  bool responseIsSuccessful(http.Response response) {
+  /// Returns true if the response has a 2XX status code.
+  bool _responseIsSuccessful(http.Response response) {
     return response.statusCode >= 200 && response.statusCode < 300;
   }
 
+  /// Creates the UI, based on the current state (either with [Tweet]s or an error.
   @override
   Widget build(BuildContext context) {
     if (tweets == null && error == null) {
