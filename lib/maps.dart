@@ -1,10 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fluttertweets/tweets.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
-import 'package:flutter/material.dart';
+import 'tweets.dart';
 
 /// Our MapsScreen is comprised of two major pieces:
 ///   - The title bar

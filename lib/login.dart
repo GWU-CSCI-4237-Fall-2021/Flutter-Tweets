@@ -1,7 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
-
 import 'package:flutter/material.dart';
-import 'package:fluttertweets/maps.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'maps.dart';
 
 /// Our LoginScreen is comprised of two major pieces:
 ///   - The title bar
@@ -32,20 +32,23 @@ class _LoginFormState extends State<LoginForm> {
   var loadingShown = false;
 
   /// Receives text events to the email field.
-  final emailTextController = TextEditingController();
+  TextEditingController emailTextController = TextEditingController();
 
   /// Receives text events to the password field.
-  final passwordTextController = TextEditingController();
+  TextEditingController passwordTextController = TextEditingController();
 
   /// Connection to Firebase Authentication.
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
 
+  /// Set up text watchers and restore credentials from preferences.
   @override
   void initState() {
     super.initState();
     // These are like Android's TextWatchers
     emailTextController.addListener(updateButtonState);
     passwordTextController.addListener(updateButtonState);
+
+    _restoreCredentials();
   }
 
   @override
@@ -165,6 +168,9 @@ class _LoginFormState extends State<LoginForm> {
                         loadingShown = false;
                       });
 
+                      // Save credentials to SharedPrefs...
+                      _saveCredentials();
+
                       // Go to the Maps screen
                       Navigator.push(
                           context,
@@ -186,5 +192,28 @@ class _LoginFormState extends State<LoginForm> {
             child: SizedBox(
                 width: double.infinity,
                 child: Center(child: Text(description.toUpperCase())))));
+  }
+
+  /// Saves email / password to SharedPreferences.
+  void _saveCredentials() async {
+    final inputtedEmail = emailTextController.text.trim();
+    final inputtedPassword = emailTextController.text.trim();
+
+    // SharedPreferences is loaded asynchronously
+    final prefs = await SharedPreferences.getInstance();
+
+    // Save values to prefs
+    prefs.setString("email", inputtedEmail);
+    prefs.setString("password", inputtedPassword);
+  }
+
+  /// Restores email / password from SharedPreferences.
+  void _restoreCredentials() async {
+    // SharedPreferences is loaded asynchronously
+    final prefs = await SharedPreferences.getInstance();
+
+    // Restore values from prefs
+    emailTextController.text = prefs.getString("email");
+    passwordTextController.text = prefs.getString("password");
   }
 }
