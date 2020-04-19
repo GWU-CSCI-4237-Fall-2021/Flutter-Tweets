@@ -88,6 +88,7 @@ class TweetsListState extends State<TweetsList> {
 
   /// Reads Twitter API keys from "assets/secrets.json" which would normally
   /// be in the .gitignore to avoid being checked into GitHub.
+  /// https://medium.com/@sokrato/storing-your-secret-keys-in-flutter-c0b9af1c0f69
   Future<TwitterSecrets> _retrieveTwitterSecrets() async {
     String secrets = await rootBundle.loadString('assets/secrets.json');
 
