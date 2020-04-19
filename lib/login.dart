@@ -10,21 +10,27 @@ class LoginScreen extends StatelessWidget {
   /// Creates the UI.
   @override
   Widget build(BuildContext context) {
+    final title = Container(
+        margin: EdgeInsets.only(top: 16.0),
+        child: Text("Login",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)));
+
     return Scaffold(
-        appBar: AppBar(title: Text('Flutter Tweets')), body: LoginForm());
+        appBar: AppBar(title: Text('Flutter Tweets')),
+        body: Column(children: [title, LoginForm()]));
   }
 }
 
 /// The LoginForm part of the screen needs to keep track of state and update accordingly.
 class LoginForm extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() => _LoginFormState();
+  State<StatefulWidget> createState() => LoginFormState();
 }
 
 /// Keeps track of whether buttons are enabled / disabled, whether the spinner should be
 /// shown or not, and the text typed into the email / password fields. The UI updates
 /// accordingly based on the current state of these values.
-class _LoginFormState extends State<LoginForm> {
+class LoginFormState extends State<LoginForm> {
   /// Controls whether the Login or Sign Up buttons are enabled.
   var buttonsEnabled = false;
 
@@ -92,11 +98,6 @@ class _LoginFormState extends State<LoginForm> {
   /// Creates the UI, based on the current state.
   @override
   Widget build(BuildContext context) {
-    final title = Text(
-      "Login",
-      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-    );
-
     final email = Container(
         width: 250,
         margin: EdgeInsets.only(top: 8.0),
@@ -120,8 +121,7 @@ class _LoginFormState extends State<LoginForm> {
 
     final login = Container(
         margin: EdgeInsets.only(top: 16.0),
-        child: _buildAuthButton(_handleSignIn, "sign in")
-    );
+        child: _buildAuthButton(_handleSignIn, "sign in"));
 
     final signUp = _buildAuthButton(_handleSignUp, "sign up");
 
@@ -134,9 +134,9 @@ class _LoginFormState extends State<LoginForm> {
 
     return Center(
         child: Container(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
-              children: [title, email, password, login, signUp, progressBar],
+              children: [email, password, login, signUp, progressBar],
             )));
   }
 
