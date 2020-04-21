@@ -75,24 +75,21 @@ class LoginFormState extends State<LoginForm> {
   }
 
   /// Async task to Firebase to register a new user.
-  Future<FirebaseUser> _handleSignUp() async {
+  Future<AuthResult> _handleSignUp() {
     final inputtedEmail = emailTextController.text.trim();
     final inputtedPassword = emailTextController.text.trim();
 
-    final Future<AuthResult> registerTask =
-        firebaseAuth.createUserWithEmailAndPassword(
+    return firebaseAuth.createUserWithEmailAndPassword(
             email: inputtedEmail, password: inputtedPassword);
-    return (await registerTask).user;
   }
 
   /// Async task to Firebase to sign in using credentials.
-  Future<FirebaseUser> _handleSignIn() async {
+  Future<AuthResult> _handleSignIn() {
     final inputtedEmail = emailTextController.text.trim();
     final inputtedPassword = emailTextController.text.trim();
 
-    final loginTask = firebaseAuth.signInWithEmailAndPassword(
+    return firebaseAuth.signInWithEmailAndPassword(
         email: inputtedEmail, password: inputtedPassword);
-    return (await loginTask).user;
   }
 
   /// Creates the UI, based on the current state.
@@ -143,7 +140,7 @@ class LoginFormState extends State<LoginForm> {
   /// Helper function to build the Login & Sign Up buttons, since they
   /// both behave the same, except for which Firebase Auth function they call.
   Container _buildAuthButton(
-      Future<FirebaseUser> Function() authFunction, String description) {
+      Future<AuthResult> Function() authFunction, String description) {
     return Container(
         margin: EdgeInsets.symmetric(horizontal: 24.0),
         child: RaisedButton(
@@ -156,11 +153,11 @@ class LoginFormState extends State<LoginForm> {
                       loadingShown = true;
                     });
                     // Wait for the Firebase Auth result...
-                    authFunction().then((user) {
+                    authFunction().then((authResult) {
                       // If successful show a short message...
                       Scaffold.of(context).showSnackBar(SnackBar(
                         content:
-                            Text("Successful $description: ${user.email}!"),
+                            Text("Successful $description: ${authResult.user.email}!"),
                       ));
 
                       // Hide the loading spinner...
