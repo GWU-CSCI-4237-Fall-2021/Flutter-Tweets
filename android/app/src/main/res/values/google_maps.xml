@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Generally, this file would be in your .gitignore -->
-    <string name="google_maps_api_key">AIzaSyD6D1ea9d0hpYai3Cei9jJl35Wc66js8_Q</string>
+    <string name="google_maps_api_key">AIzaSyCp0wjiUbVEFlxZcNwtfaNTBLYIBISj7Ho</string>
 </resources>

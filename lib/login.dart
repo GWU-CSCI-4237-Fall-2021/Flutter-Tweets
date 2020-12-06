@@ -75,7 +75,7 @@ class LoginFormState extends State<LoginForm> {
   }
 
   /// Async task to Firebase to register a new user.
-  Future<AuthResult> _handleSignUp() {
+  Future<UserCredential> _handleSignUp() {
     final inputtedEmail = emailTextController.text.trim();
     final inputtedPassword = emailTextController.text.trim();
 
@@ -84,7 +84,7 @@ class LoginFormState extends State<LoginForm> {
   }
 
   /// Async task to Firebase to sign in using credentials.
-  Future<AuthResult> _handleSignIn() {
+  Future<UserCredential> _handleSignIn() {
     final inputtedEmail = emailTextController.text.trim();
     final inputtedPassword = emailTextController.text.trim();
 
@@ -140,7 +140,7 @@ class LoginFormState extends State<LoginForm> {
   /// Helper function to build the Login & Sign Up buttons, since they
   /// both behave the same, except for which Firebase Auth function they call.
   Container _buildAuthButton(
-      Future<AuthResult> Function() authFunction, String description) {
+      Future<UserCredential> Function() authFunction, String description) {
     return Container(
         margin: EdgeInsets.symmetric(horizontal: 24.0),
         child: RaisedButton(

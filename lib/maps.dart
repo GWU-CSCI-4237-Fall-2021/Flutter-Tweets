@@ -14,24 +14,15 @@ class MapsScreen extends StatelessWidget {
   /// Creates the UI.
   @override
   Widget build(BuildContext context) {
-    // Unlike in Android, in Flutter getting the currentUser is also an async action
-    // So our UI has to have an "initial" state and then an "updated" state after the
-    // current user is retrieved.
-    return FutureBuilder(
-        future: firebaseAuth.currentUser(),
-        builder: (BuildContext context, AsyncSnapshot<FirebaseUser> asyncUser) {
-          // Different titles for the placeholder vs. when we have the current user
-          final title = asyncUser.connectionState == ConnectionState.done
-              ? "Welcome, ${asyncUser.data.email}!"
-              : "Welcome!";
+    final currentUser = firebaseAuth.currentUser;
+    final title = "Welcome, ${currentUser.email}!";
 
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(title),
-            ),
-            body: MapView(),
-          );
-        });
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: MapView(),
+    );
   }
 }
 
@@ -219,7 +210,7 @@ class MapViewState extends State<MapView> {
       loadingShown = true;
     });
 
-    Geolocator()
+    Geolocator
         .getCurrentPosition(desiredAccuracy: LocationAccuracy.high)
         .then((Position position) {
       _handleGeocoding(context, LatLng(position.latitude, position.longitude));
