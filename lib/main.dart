@@ -10,17 +10,23 @@ void main() {
 
 class App extends StatelessWidget {
   // Create the initialization Future outside of `build`:
-  final Future<FirebaseApp> _initialization = Firebase.initializeApp();
+  final Future<FirebaseApp> _firebaseInit = Firebase.initializeApp();
 
   @override
   Widget build(BuildContext context) {
-    /// Wrap our application in one that uses Material Design
-    /// (as opposed to iOS's Cupertino or a roll-your-own design)
+    /// Similar to Android, in Flutter initializing Firebase an async action...
     ///
-    /// The first screen of the app will be the LoginScreen.
+    /// However, in Android it was something that was done for us, in Flutter *we* have to initiate
+    /// the process and "wait" for Firebase to finish initializing (maybe show a loading
+    /// screen in the meantime).
+    /// 
+    /// So our UI has to have an "initial" state and then an "updated" state after the
+    /// current user is retrieved.
+    ///
+    /// i.e. there's a little extra complexity here on Flutter, since an asynchronous action determines
+    /// what we actually render on the screen from the root level.
     return FutureBuilder(
-      // Initialize FlutterFire:
-      future: _initialization,
+      future: _firebaseInit,
       builder: (context, snapshot) {
         // Check for errors
         if (snapshot.hasError) {
@@ -31,15 +37,19 @@ class App extends StatelessWidget {
                   body: Center(child: Text('Failed to initialize Firebase!'))));
         }
 
-        // Once complete, show your application
+        // Once complete, show the login screen
         if (snapshot.connectionState == ConnectionState.done) {
+          /// Wrap our application in one that uses Material Design
+          /// (as opposed to iOS's Cupertino or a roll-your-own design)
+          ///
+          /// The first screen of the app will be the LoginScreen.
           return MaterialApp(
             title: 'Flutter Tweets',
             home: LoginScreen(),
           );
         }
 
-        // Otherwise, show something whilst waiting for initialization to complete
+        // Otherwise, show a loading spinner while waiting for initialization to complete
         return MaterialApp(
             title: 'Flutter Tweets',
             home: Scaffold(
