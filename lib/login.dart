@@ -38,10 +38,10 @@ class LoginFormState extends State<LoginForm> {
   var loadingShown = false;
 
   /// Receives text events to the email field.
-  TextEditingController emailTextController = TextEditingController();
+  final TextEditingController emailTextController = TextEditingController();
 
   /// Receives text events to the password field.
-  TextEditingController passwordTextController = TextEditingController();
+  final TextEditingController passwordTextController = TextEditingController();
 
   /// Connection to Firebase Authentication.
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
@@ -51,8 +51,8 @@ class LoginFormState extends State<LoginForm> {
   void initState() {
     super.initState();
     // These are like Android's TextWatchers
-    emailTextController.addListener(updateButtonState);
-    passwordTextController.addListener(updateButtonState);
+    emailTextController.addListener(_updateButtonState);
+    passwordTextController.addListener(_updateButtonState);
 
     _restoreCredentials();
   }
@@ -66,7 +66,7 @@ class LoginFormState extends State<LoginForm> {
   }
 
   /// Set [buttonsEnabled] based on whether both email & password fields are non-empty.
-  void updateButtonState() {
+  void _updateButtonState() {
     final enabled = emailTextController.text.trim().isNotEmpty &&
         passwordTextController.text.trim().isNotEmpty;
     setState(() {
@@ -139,55 +139,56 @@ class LoginFormState extends State<LoginForm> {
 
   /// Helper function to build the Login & Sign Up buttons, since they
   /// both behave the same, except for which Firebase Auth function they call.
-  Container _buildAuthButton(
-      Future<UserCredential> Function() authFunction, String description) {
+  Container _buildAuthButton(Future<UserCredential> Function() authFunction, String description) {
     return Container(
         margin: EdgeInsets.symmetric(horizontal: 24.0),
         width: double.infinity,
         child: RaisedButton(
             // Setting the onPressed listener to null disables the button
             // Using the ternary operator here: <condition> ? <true> : <false>
-            onPressed: buttonsEnabled && !loadingShown
-                ? () {
-                    // Display the loading spinner...
-                    setState(() {
-                      loadingShown = true;
-                    });
-                    // Wait for the Firebase Auth result...
-                    authFunction().then((authResult) {
-                      // If successful show a short message...
-                      Scaffold.of(context).showSnackBar(SnackBar(
-                        content:
-                            Text("Successful $description: ${authResult.user.email}!"),
-                      ));
-
-                      // Hide the loading spinner...
-                      setState(() {
-                        loadingShown = false;
-                      });
-
-                      // Save credentials to SharedPrefs...
-                      _saveCredentials();
-
-                      // Go to the Maps screen
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => MapsScreen()));
-                    }).catchError((e) {
-                      // If failed show a short message...
-                      Scaffold.of(context).showSnackBar(SnackBar(
-                        content: Text("Failed $description: $e"),
-                      ));
-
-                      // Hide the loading spinner
-                      setState(() {
-                        loadingShown = false;
-                      });
-                    });
-                  }
-                : null,
+            onPressed: buttonsEnabled && !loadingShown ? () {
+              _handleAuthButtonClicked(authFunction, description);
+            } : null,
             child: Center(child: Text(description.toUpperCase()))));
+  }
+
+  void _handleAuthButtonClicked(Future<UserCredential> Function() authFunction, String description) {
+    // Display the loading spinner...
+    setState(() {
+      loadingShown = true;
+    });
+    // Wait for the Firebase Auth result...
+    authFunction().then((authResult) {
+      // If successful show a short message...
+      Scaffold.of(context).showSnackBar(SnackBar(
+        content:
+        Text("Successful $description: ${authResult.user.email}!"),
+      ));
+
+      // Hide the loading spinner...
+      setState(() {
+        loadingShown = false;
+      });
+
+      // Save credentials to SharedPrefs...
+      _saveCredentials();
+
+      // Go to the Maps screen
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => MapsScreen()));
+    }).catchError((e) {
+      // If failed show a short message...
+      Scaffold.of(context).showSnackBar(SnackBar(
+        content: Text("Failed $description: $e"),
+      ));
+
+      // Hide the loading spinner
+      setState(() {
+        loadingShown = false;
+      });
+    });
   }
 
   /// Saves email / password to SharedPreferences.
