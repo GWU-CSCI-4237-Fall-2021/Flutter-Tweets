@@ -148,8 +148,9 @@ class MapViewState extends State<MapView> {
         Align(
           alignment: Alignment.bottomCenter,
           child: Container(
+              width: double.infinity,
               margin: EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 16.0),
-              child: SizedBox(width: double.infinity, child: confirm)),
+              child: confirm),
         ),
         Align(
           alignment: Alignment.center,

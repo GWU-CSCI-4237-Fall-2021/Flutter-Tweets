@@ -143,6 +143,7 @@ class LoginFormState extends State<LoginForm> {
       Future<UserCredential> Function() authFunction, String description) {
     return Container(
         margin: EdgeInsets.symmetric(horizontal: 24.0),
+        width: double.infinity,
         child: RaisedButton(
             // Setting the onPressed listener to null disables the button
             // Using the ternary operator here: <condition> ? <true> : <false>
@@ -186,9 +187,7 @@ class LoginFormState extends State<LoginForm> {
                     });
                   }
                 : null,
-            child: SizedBox(
-                width: double.infinity,
-                child: Center(child: Text(description.toUpperCase())))));
+            child: Center(child: Text(description.toUpperCase()))));
   }
 
   /// Saves email / password to SharedPreferences.

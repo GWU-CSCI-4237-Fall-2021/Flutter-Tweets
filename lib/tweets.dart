@@ -201,7 +201,7 @@ class TweetsListState extends State<TweetsList> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        SizedBox(
+                        Container(
                             width: 75,
                             height: 75,
                             child: Image.network(curr.iconUrl)),
