@@ -80,7 +80,7 @@ class LoginFormState extends State<LoginForm> {
     final inputtedPassword = emailTextController.text.trim();
 
     return firebaseAuth.createUserWithEmailAndPassword(
-            email: inputtedEmail, password: inputtedPassword);
+        email: inputtedEmail, password: inputtedPassword);
   }
 
   /// Async task to Firebase to sign in using credentials.
@@ -139,21 +139,29 @@ class LoginFormState extends State<LoginForm> {
 
   /// Helper function to build the Login & Sign Up buttons, since they
   /// both behave the same, except for which Firebase Auth function they call.
-  Container _buildAuthButton(Future<UserCredential> Function() authFunction, String description) {
+  Container _buildAuthButton(
+      Future<UserCredential> Function() authFunction,
+      String description
+  ) {
     return Container(
         margin: EdgeInsets.symmetric(horizontal: 24.0),
         width: double.infinity,
         child: ElevatedButton(
             // Setting the onPressed listener to null disables the button
             // Using the ternary operator here: <condition> ? <true> : <false>
-            onPressed: buttonsEnabled && !loadingShown ? () {
-              _handleAuthButtonClicked(authFunction, description);
-            } : null,
+            onPressed: buttonsEnabled && !loadingShown
+                ? () {
+                    _handleAuthButtonClicked(authFunction, description);
+                  }
+                : null,
             style: ElevatedButton.styleFrom(onPrimary: Colors.white),
             child: Center(child: Text(description.toUpperCase()))));
   }
 
-  void _handleAuthButtonClicked(Future<UserCredential> Function() authFunction, String description) {
+  void _handleAuthButtonClicked(
+      Future<UserCredential> Function() authFunction,
+      String description
+  ) {
     // Display the loading spinner...
     setState(() {
       loadingShown = true;
@@ -162,8 +170,7 @@ class LoginFormState extends State<LoginForm> {
     authFunction().then((authResult) {
       // If successful show a short message...
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content:
-        Text("Successful $description: ${authResult.user?.email}!"),
+        content: Text("Successful $description: ${authResult.user?.email}!"),
       ));
 
       // Hide the loading spinner...
@@ -175,7 +182,10 @@ class LoginFormState extends State<LoginForm> {
       _saveCredentials();
 
       // Go to the Maps screen
-      Navigator.push(context, MaterialPageRoute(builder: (context) => MapsScreen()));
+      Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => MapsScreen())
+      );
     }).catchError((e) {
       // If failed show a short message...
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(

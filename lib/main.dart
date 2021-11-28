@@ -19,7 +19,7 @@ class App extends StatelessWidget {
     /// However, in Android it was something that was done for us, in Flutter *we* have to initiate
     /// the process and "wait" for Firebase to finish initializing (maybe show a loading
     /// screen in the meantime).
-    /// 
+    ///
     /// So our UI has to have an "initial" state and then an "updated" state after the
     /// current user is retrieved.
     ///

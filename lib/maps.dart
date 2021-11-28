@@ -82,15 +82,19 @@ class MapViewState extends State<MapView> {
         elevation: 2.0,
         color: Colors.white,
         child: IconButton(
-          onPressed: !loadingShown ? () {
-            _handleCurrentLocation(context);
-          } : null,
+          onPressed: !loadingShown
+              ? () {
+                  _handleCurrentLocation(context);
+                }
+              : null,
           icon: Icon(Icons.my_location),
         ));
 
     // Update our confirmation button based on whether a location has been chosen
-    final String addressText = "${currentAddress?.streetAddress}, ${currentAddress?.city}, ${currentAddress?.region}";
-    final String confirmText = currentAddress != null ? addressText : "Long-tap to choose a location!";
+    final String addressText =
+        "${currentAddress?.streetAddress}, ${currentAddress?.city}, ${currentAddress?.region}";
+    final String confirmText =
+        currentAddress != null ? addressText : "Long-tap to choose a location!";
     final confirmIcon = currentAddress != null ? Icons.check : Icons.clear;
     final VoidCallback? confirmOnClick = currentAddress != null && !loadingShown
         ? () {
@@ -99,7 +103,9 @@ class MapViewState extends State<MapView> {
             Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => TweetsScreen(address: currentAddress!, coordinates: currentCoordinates!)));
+                    builder: (context) => TweetsScreen(
+                        address: currentAddress!,
+                        coordinates: currentCoordinates!)));
           }
         : null;
 
@@ -112,8 +118,7 @@ class MapViewState extends State<MapView> {
         style: ElevatedButton.styleFrom(
             primary: Colors.green,
             onPrimary: Colors.white,
-            onSurface: Colors.red
-        ),
+            onSurface: Colors.red),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -158,10 +163,7 @@ class MapViewState extends State<MapView> {
               margin: EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 16.0),
               child: confirm),
         ),
-        Align(
-          alignment: Alignment.center,
-          child: progressBar
-        )
+        Align(alignment: Alignment.center, child: progressBar)
       ],
     );
   }
@@ -178,26 +180,26 @@ class MapViewState extends State<MapView> {
 
     // This geocoder package only returns a single event and handles the thread for us (returns a Future)
     pendingAddress.then((Address result) {
-        // Refresh the new UI with a new marker and address
-        setState(() {
-          loadingShown = false;
-          currentCoordinates = latLng;
-          currentAddress = result;
-          markers.clear();
-          final markerId = MarkerId("Marker");
-          markers.add(Marker(
-            markerId: markerId,
-            position: latLng,
-            infoWindow: InfoWindow(title: "${result.streetAddress}, ${result.city}, ${result.region}"),
-            icon: BitmapDescriptor.defaultMarker,
-          ));
-        });
-        mapController.animateCamera(CameraUpdate.newLatLngZoom(latLng, 14.0));
+      // Refresh the new UI with a new marker and address
+      setState(() {
+        loadingShown = false;
+        currentCoordinates = latLng;
+        currentAddress = result;
+        markers.clear();
+        final markerId = MarkerId("Marker");
+        markers.add(Marker(
+          markerId: markerId,
+          position: latLng,
+          infoWindow: InfoWindow(title: "${result.streetAddress}, ${result.city}, ${result.region}"),
+          icon: BitmapDescriptor.defaultMarker,
+        ));
+      });
+      mapController.animateCamera(CameraUpdate.newLatLngZoom(latLng, 14.0));
     }).catchError((error) {
       if (error is EmptyResultException) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text("No results found for location!"),
-          ));
+          content: Text("No results found for location!"),
+        ));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text("Failed to geocode: $error"),

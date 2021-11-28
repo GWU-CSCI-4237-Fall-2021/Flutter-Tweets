@@ -8,6 +8,7 @@ import 'package:flutter/services.dart' show rootBundle;
 
 /// Data class representing a Tweet.
 class Tweet {
+
   Tweet({
     required this.name,
     required this.handle,
@@ -23,6 +24,7 @@ class Tweet {
 
 /// Data class to hold Twitter API keys.
 class TwitterSecrets {
+
   TwitterSecrets({
     required this.key,
     required this.secret
@@ -36,12 +38,8 @@ class TwitterSecrets {
 ///   - The title bar
 ///   - The actual list of [Tweet]s.
 class TweetsScreen extends StatelessWidget {
-
   // Data passed from previous screen
-  TweetsScreen({
-    required this.address,
-    required this.coordinates
-  });
+  TweetsScreen({required this.address, required this.coordinates});
 
   final LatLng coordinates;
 
@@ -50,8 +48,11 @@ class TweetsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar:
-            AppBar(title: Text('Flutter Tweets near ${address.streetAddress}', overflow: TextOverflow.ellipsis,)),
+        appBar: AppBar(
+            title: Text(
+          'Flutter Tweets near ${address.streetAddress}',
+          overflow: TextOverflow.ellipsis,
+        )),
         body: Padding(
             padding: EdgeInsets.symmetric(vertical: 8.0),
             child: TweetsList(address, coordinates)));
@@ -186,7 +187,14 @@ class TweetsListState extends State<TweetsList> {
         String handle = userJson["screen_name"];
         String iconUrl = userJson["profile_image_url_https"];
 
-        tweets.add(Tweet(name: name, handle: handle, iconUrl: iconUrl, content: content));
+        final tweet = Tweet(
+            name: name,
+            handle: handle,
+            iconUrl: iconUrl,
+            content: content
+        );
+        
+        tweets.add(tweet);
       });
     } else {
       return Future.error(
@@ -236,11 +244,8 @@ class TweetsListState extends State<TweetsList> {
                                       overflow: TextOverflow.ellipsis,
                                       maxLines: 1,
                                       style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18
-                                      )
-                                  )
-                              ),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18))),
                               Text("@${curr.handle}"),
                               Container(
                                 width: MediaQuery.of(context).size.width - 125,
