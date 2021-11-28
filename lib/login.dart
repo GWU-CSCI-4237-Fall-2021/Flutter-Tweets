@@ -117,10 +117,10 @@ class LoginFormState extends State<LoginForm> {
         ));
 
     final login = Container(
-        margin: EdgeInsets.only(top: 16.0),
-        child: _buildAuthButton(_handleSignIn, "sign in"));
+        margin: EdgeInsets.only(top: 24.0),
+        child: _buildAuthButton(_handleSignIn, "Login"));
 
-    final signUp = _buildAuthButton(_handleSignUp, "sign up");
+    final signUp = _buildAuthButton(_handleSignUp, "Sign Up");
 
     final progressBar = Container(
         margin: EdgeInsets.only(top: 24.0),
@@ -143,12 +143,13 @@ class LoginFormState extends State<LoginForm> {
     return Container(
         margin: EdgeInsets.symmetric(horizontal: 24.0),
         width: double.infinity,
-        child: RaisedButton(
+        child: ElevatedButton(
             // Setting the onPressed listener to null disables the button
             // Using the ternary operator here: <condition> ? <true> : <false>
             onPressed: buttonsEnabled && !loadingShown ? () {
               _handleAuthButtonClicked(authFunction, description);
             } : null,
+            style: ElevatedButton.styleFrom(onPrimary: Colors.white),
             child: Center(child: Text(description.toUpperCase()))));
   }
 
@@ -160,9 +161,9 @@ class LoginFormState extends State<LoginForm> {
     // Wait for the Firebase Auth result...
     authFunction().then((authResult) {
       // If successful show a short message...
-      Scaffold.of(context).showSnackBar(SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content:
-        Text("Successful $description: ${authResult.user.email}!"),
+        Text("Successful $description: ${authResult.user?.email}!"),
       ));
 
       // Hide the loading spinner...
@@ -174,13 +175,10 @@ class LoginFormState extends State<LoginForm> {
       _saveCredentials();
 
       // Go to the Maps screen
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => MapsScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (context) => MapsScreen()));
     }).catchError((e) {
       // If failed show a short message...
-      Scaffold.of(context).showSnackBar(SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Failed $description: $e"),
       ));
 
@@ -210,7 +208,7 @@ class LoginFormState extends State<LoginForm> {
     final prefs = await SharedPreferences.getInstance();
 
     // Restore values from prefs
-    emailTextController.text = prefs.getString("email");
-    passwordTextController.text = prefs.getString("password");
+    emailTextController.text = prefs.getString("email") ?? "";
+    passwordTextController.text = prefs.getString("password") ?? "";
   }
 }

@@ -14,25 +14,25 @@ description: Android Tweets, but with Flutter!
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.2.0 <3.0.0"
+  sdk: ">=2.15.0-268.18.beta <3.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.1
+  cupertino_icons: ^1.0.4
 
-  firebase_core: ^0.5.3
-  firebase_analytics: ^6.3.0
-  firebase_database: ^4.4.0
-  firebase_auth: ^0.18.4
+  firebase_core: ^1.10.0
+  firebase_analytics: ^8.3.4
+  firebase_database: ^8.1.0
+  firebase_auth: ^3.2.0
 
-  geocoder: ^0.2.1
-  google_maps_flutter: ^1.0.6
+  geocode: ^1.0.1
+  google_maps_flutter: ^2.1.1
 
-  http: ^0.12.2
-  geolocator: ^6.1.10
+  http: ^0.13.4
+  geolocator: ^7.7.1
 
-  shared_preferences: 0.5.12+4
+  shared_preferences: ^2.0.9
 
 dev_dependencies:
   flutter_test:

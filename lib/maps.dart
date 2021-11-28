@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:geocoder/geocoder.dart';
+import 'package:flutter/services.dart';
+import 'package:geocode/geocode.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'tweets.dart';
@@ -15,7 +18,7 @@ class MapsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentUser = firebaseAuth.currentUser;
-    final title = "Welcome, ${currentUser.email}!";
+    final title = "Welcome, ${currentUser!.email}!";
 
     return Scaffold(
       appBar: AppBar(
@@ -37,13 +40,14 @@ class MapView extends StatefulWidget {
 /// Displays the Map and functionality related to it -- marker display, geocoding, buttons.
 class MapViewState extends State<MapView> {
   /// Allows us to manipulate the map (show markers, zoom, etc.).
-  GoogleMapController mapController;
+  late GoogleMapController mapController;
 
   /// Markers currently displayed on the map.
   final markers = Set<Marker>();
 
   /// The currently chosen (and geocoded) location on the map.
-  Address currentAddress;
+  Address? currentAddress;
+  LatLng? currentCoordinates;
 
   /// Controls whether our progress indicator is shown.
   var loadingShown = false;
@@ -85,29 +89,31 @@ class MapViewState extends State<MapView> {
         ));
 
     // Update our confirmation button based on whether a location has been chosen
-    final confirmText = currentAddress != null
-        ? currentAddress.addressLine
-        : "Long-tap to choose a location!";
+    final String addressText = "${currentAddress?.streetAddress}, ${currentAddress?.city}, ${currentAddress?.region}";
+    final String confirmText = currentAddress != null ? addressText : "Long-tap to choose a location!";
     final confirmIcon = currentAddress != null ? Icons.check : Icons.clear;
-    final VoidCallback confirmOnClick = currentAddress != null && !loadingShown
+    final VoidCallback? confirmOnClick = currentAddress != null && !loadingShown
         ? () {
             // If enabled, clicking goes to the Tweets screen and passes it the
             // current address as a parameter.
             Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => TweetsScreen(currentAddress)));
+                    builder: (context) => TweetsScreen(address: currentAddress!, coordinates: currentCoordinates!)));
           }
         : null;
 
     // https://stackoverflow.com/a/59483324
-    // Using RaisedButton.icon would work too and is much simpler, but doesn't give
+    // Using ElevatedButton.icon would work too and is much simpler, but doesn't give
     // me the spacing I want between the Icon and the Text, so doing a "custom" solution manually
     // using a Row + weighted spacing using Expanded
-    final confirm = RaisedButton(
+    final confirm = ElevatedButton(
         onPressed: confirmOnClick,
-        color: Colors.green,
-        disabledColor: Colors.red,
+        style: ElevatedButton.styleFrom(
+            primary: Colors.green,
+            onPrimary: Colors.white,
+            onSurface: Colors.red
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -166,39 +172,37 @@ class MapViewState extends State<MapView> {
       loadingShown = true;
     });
 
-    final coordinates = Coordinates(latLng.latitude, latLng.longitude);
-    Geocoder.local
-        .findAddressesFromCoordinates(coordinates)
-        .then((List<Address> results) {
-      if (results.isNotEmpty) {
-        final first = results.first;
+    final geocoder = _createGeocoder();
 
+    final pendingAddress = geocoder.reverseGeocoding(latitude: latLng.latitude, longitude: latLng.longitude);
+
+    // This geocoder package only returns a single event and handles the thread for us (returns a Future)
+    pendingAddress.then((Address result) {
         // Refresh the new UI with a new marker and address
         setState(() {
           loadingShown = false;
-          currentAddress = first;
+          currentCoordinates = latLng;
+          currentAddress = result;
           markers.clear();
           final markerId = MarkerId("Marker");
           markers.add(Marker(
             markerId: markerId,
             position: latLng,
-            infoWindow: InfoWindow(title: first.addressLine),
+            infoWindow: InfoWindow(title: "${result.streetAddress}, ${result.city}, ${result.region}"),
             icon: BitmapDescriptor.defaultMarker,
           ));
         });
         mapController.animateCamera(CameraUpdate.newLatLngZoom(latLng, 14.0));
-      } else {
-        Scaffold.of(context).showSnackBar(SnackBar(
-          content: Text("No results found for location!"),
-        ));
-        setState(() {
-          loadingShown = false;
-        });
-      }
     }).catchError((error) {
-      Scaffold.of(context).showSnackBar(SnackBar(
-        content: Text("Failed to geocode: $error"),
-      ));
+      if (error is EmptyResultException) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("No results found for location!"),
+          ));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Failed to geocode: $error"),
+        ));
+      }
       setState(() {
         loadingShown = false;
       });
@@ -221,5 +225,17 @@ class MapViewState extends State<MapView> {
         loadingShown = false;
       });
     });
+  }
+
+  /// Originally, I used a geocoding package (https://pub.dev/packages/geocoder) that
+  /// used the simple local Geocoder class under-the-hood.
+  ///
+  /// That package is no longer functional on the latest Flutter version, so in the meantime
+  /// I'm using a library that hits https://geocode.xyz/ and requires an API key (https://pub.dev/packages/geocode).
+  ///
+  /// Ideally, the key would be in the secrets.json file (see: tweets.dart), but I'll be moving
+  /// back to a package that uses the local Geocoder once an updated one is available.
+  GeoCode _createGeocoder() {
+    return GeoCode(apiKey: "185317204532554585416x84179");
   }
 }

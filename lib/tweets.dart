@@ -1,13 +1,19 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:geocoder/geocoder.dart';
+import 'package:geocode/geocode.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart' show rootBundle;
 
 /// Data class representing a Tweet.
 class Tweet {
-  Tweet({this.name, this.handle, this.content, this.iconUrl});
+  Tweet({
+    required this.name,
+    required this.handle,
+    required this.content,
+    required this.iconUrl
+  });
 
   final String name;
   final String handle;
@@ -17,7 +23,10 @@ class Tweet {
 
 /// Data class to hold Twitter API keys.
 class TwitterSecrets {
-  TwitterSecrets({this.key, this.secret});
+  TwitterSecrets({
+    required this.key,
+    required this.secret
+  });
 
   final String key;
   final String secret;
@@ -27,7 +36,14 @@ class TwitterSecrets {
 ///   - The title bar
 ///   - The actual list of [Tweet]s.
 class TweetsScreen extends StatelessWidget {
-  TweetsScreen(this.address);
+
+  // Data passed from previous screen
+  TweetsScreen({
+    required this.address,
+    required this.coordinates
+  });
+
+  final LatLng coordinates;
 
   final Address address;
 
@@ -35,39 +51,43 @@ class TweetsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar:
-            AppBar(title: Text('Flutter Tweets near ${address.addressLine}')),
+            AppBar(title: Text('Flutter Tweets near ${address.streetAddress}', overflow: TextOverflow.ellipsis,)),
         body: Padding(
             padding: EdgeInsets.symmetric(vertical: 8.0),
-            child: TweetsList(address)));
+            child: TweetsList(address, coordinates)));
   }
 }
 
 /// The TweetsList part of the screen handles making the Twitter API call (using
 /// the current [address] and rendering the scrollable list of [Tweet]s.
 class TweetsList extends StatefulWidget {
-  TweetsList(this.address);
+  TweetsList(this.address, this.coordinates);
 
   final Address address;
 
+  final LatLng coordinates;
+
   @override
   State<StatefulWidget> createState() {
-    return TweetsListState(address);
+    return TweetsListState(address, coordinates);
   }
 }
 
 /// Handles making the Twitter API call (using the current [address] and
 /// rendering the scrollable list of [Tweet]s (or an error text).
 class TweetsListState extends State<TweetsList> {
-  TweetsListState(this.address);
+  TweetsListState(this.address, this.coordinates);
 
   /// Location the user selected on the [MapsScreen].
   final Address address;
 
+  final LatLng coordinates;
+
   /// Retrieved list of [Tweet]s.
-  List<Tweet> tweets;
+  List<Tweet>? tweets;
 
   /// API error, if one occurred.
-  String error;
+  String? error;
 
   /// Kick off the API call when initialized for the 1st time.
   @override
@@ -109,7 +129,7 @@ class TweetsListState extends State<TweetsList> {
 
     // Execute API call
     http.Response oAuthResponse = await http.post(
-        "https://api.twitter.com/oauth2/token",
+        Uri.parse("https://api.twitter.com/oauth2/token"),
         headers: {"Authorization": "Basic $combinedBase64"},
         body: {"grant_type": "client_credentials"});
 
@@ -133,13 +153,13 @@ class TweetsListState extends State<TweetsList> {
 
     // Request parameters
     String searchTerm = "flutter";
-    double latitude = address.coordinates.latitude;
-    double longitude = address.coordinates.longitude;
+    double latitude = coordinates.latitude;
+    double longitude = coordinates.longitude;
     String radius = "30mi";
-    List<Tweet> tweets = List();
+    List<Tweet> tweets = List.empty(growable: true);
 
     http.Response searchTweetsResponse = await http.get(
-        "https://api.twitter.com/1.1/search/tweets.json?q=$searchTerm&geocode=$latitude,$longitude,$radius",
+        Uri.parse("https://api.twitter.com/1.1/search/tweets.json?q=$searchTerm&geocode=$latitude,$longitude,$radius"),
         headers: {"Authorization": "Bearer $token"});
 
     if (_responseIsSuccessful(searchTweetsResponse) && searchTweetsResponse.body.isNotEmpty) {
@@ -187,13 +207,13 @@ class TweetsListState extends State<TweetsList> {
       return Center(child: CircularProgressIndicator());
     } else if (error != null) {
       return Center(child: Text('Failed to retrieve Tweets! $error'));
-    } else if (tweets.isEmpty) {
+    } else if (tweets != null && tweets!.isEmpty) {
       return Center(child: Text('No Tweets found!'));
     } else {
       return ListView.builder(
-          itemCount: tweets.length,
+          itemCount: tweets!.length,
           itemBuilder: (context, i) {
-            Tweet curr = tweets[i];
+            Tweet curr = tweets![i];
             return Card(
                 margin: EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
                 child: Padding(
@@ -205,16 +225,25 @@ class TweetsListState extends State<TweetsList> {
                             width: 75,
                             height: 75,
                             child: Image.network(curr.iconUrl)),
+
+                        // Could do better than fixed widths here to help with overflow
                         Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Text(curr.name,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18)),
+                              Container(
+                                  width: MediaQuery.of(context).size.width - 125,
+                                  child: Text(curr.name,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18
+                                      )
+                                  )
+                              ),
                               Text("@${curr.handle}"),
                               Container(
-                                width: MediaQuery.of(context).size.width - 150,
+                                width: MediaQuery.of(context).size.width - 125,
                                 margin: EdgeInsets.only(top: 8.0),
                                 child: Text(curr.content),
                               )
